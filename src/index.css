@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Snipfit Gym Design System - Premium Fitness Brand */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Oswald:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Core Brand Colors */
+    --background: 220 13% 6%;
+    --foreground: 0 0% 98%;
+    --surface: 220 13% 8%;
+    --surface-elevated: 220 13% 12%;
+    
+    /* Electric Blue Primary Palette */
+    --primary: 212 100% 50%;
+    --primary-glow: 212 100% 60%;
+    --primary-dark: 212 100% 40%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Vibrant Accent Colors */
+    --accent: 45 100% 60%;
+    --accent-glow: 45 100% 70%;
+    --accent-foreground: 220 13% 6%;
+    
+    /* Secondary Palette */
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 0 0% 90%;
+    
+    /* Neutral Grays */
+    --muted: 220 13% 20%;
+    --muted-foreground: 220 9% 60%;
+    
+    /* UI Elements */
+    --card: 220 13% 8%;
+    --card-foreground: 0 0% 98%;
+    --card-elevated: 220 13% 12%;
+    
+    --popover: 220 13% 8%;
+    --popover-foreground: 0 0% 98%;
+    
+    --border: 220 13% 15%;
+    --input: 220 13% 12%;
+    --ring: 212 100% 50%;
+    
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 13% 6%;
+    
+    /* Design System Extensions */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    
+    /* Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-dark: linear-gradient(135deg, hsl(var(--surface)), hsl(var(--surface-elevated)));
+    --gradient-hero: linear-gradient(rgba(33, 37, 49, 0.8), rgba(33, 37, 49, 0.9));
+    
+    /* Glass Effects */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* Premium Shadows */
+    --shadow-primary: 0 10px 40px rgba(18, 135, 255, 0.3);
+    --shadow-accent: 0 10px 40px rgba(255, 193, 7, 0.2);
+    --shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 50px rgba(18, 135, 255, 0.4);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-inter antialiased;
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(18, 135, 255, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 193, 7, 0.03) 0%, transparent 50%);
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Glass Morphism Components */
+  .glass-card {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl;
+    box-shadow: var(--glass-shadow);
+  }
+  
+  .glass-nav {
+    @apply backdrop-blur-md bg-background/80 border-b border-white/10;
+  }
+  
+  /* Premium Button Variants */
+  .btn-hero {
+    @apply bg-primary hover:bg-primary-glow text-primary-foreground font-semibold px-8 py-4 rounded-xl;
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-primary);
+    transition: var(--transition-smooth);
+  }
+  
+  .btn-hero:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .btn-accent {
+    @apply bg-accent hover:bg-accent-glow text-accent-foreground font-semibold px-6 py-3 rounded-lg;
+    background: var(--gradient-accent);
+    box-shadow: var(--shadow-accent);
+    transition: var(--transition-smooth);
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-white/5 text-foreground border border-white/20 hover:border-primary/50;
+    transition: var(--transition-smooth);
+  }
+  
+  /* Typography Styles */
+  .heading-hero {
+    @apply font-oswald font-bold text-6xl md:text-8xl leading-tight;
+    background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--primary-glow)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .heading-section {
+    @apply font-oswald font-bold text-4xl md:text-5xl leading-tight text-foreground;
+  }
+  
+  .text-premium {
+    color: hsl(var(--primary-glow));
+  }
+  
+  /* Animation Classes */
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  /* Membership Card Styles */
+  .membership-card {
+    @apply glass-card p-8 hover-lift relative overflow-hidden;
+    border-image: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(18, 135, 255, 0.2)) 1;
+  }
+  
+  .membership-card.featured {
+    border: 2px solid hsl(var(--primary));
+    box-shadow: var(--shadow-primary);
+  }
+  
+  .membership-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: var(--transition-smooth);
+  }
+  
+  .membership-card:hover::before {
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 20px rgba(18, 135, 255, 0.4);
+  }
+  to {
+    box-shadow: 0 0 40px rgba(18, 135, 255, 0.6);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}

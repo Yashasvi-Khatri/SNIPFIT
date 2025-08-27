@@ -1,0 +1,180 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  password      String
+  role          UserRole      @default(MEMBER)
+  membership    Membership[]
+  measurements  Measurement[]
+  workouts      Workout[]
+  dietPlans     DietPlan[]
+  enrollments   Enrollment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  TRAINER
+  MEMBER
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  status      MembershipStatus @default(ACTIVE)
+  plan        MembershipPlan
+  payments    Payment[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum MembershipStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  CANCELLED
+}
+
+enum MembershipPlan {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
+model GymClass {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  schedule    DateTime
+  duration    Int          // in minutes
+  capacity    Int
+  trainerId   String
+  trainer     User         @relation(fields: [trainerId], references: [id])
+  enrollments Enrollment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  classId   String
+  gymClass  GymClass @relation(fields: [classId], references: [id])
+  status    EnrollmentStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, classId])
+}
+
+enum EnrollmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  exercises   Json     // Array of {name: string, sets: number, reps: number, weight?: number}
+  createdById String
+  createdBy   User     @relation("TrainerWorkouts", fields: [createdById], references: [id])
+  assignedTo  User?    @relation("AssignedWorkouts")
+  assignedToId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DietPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  meals       Json     // Array of {day: number, meals: Array<{time: string, name: string, description: string}>}
+  createdById String
+  createdBy   User     @relation("TrainerDietPlans", fields: [createdById], references: [id])
+  assignedTo  User?    @relation("AssignedDietPlans")
+  assignedToId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Measurement {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  weight      Float    // in kg
+  height      Float    // in cm
+  bmi         Float
+  bmr         Float
+  bodyFat     Float    // percentage
+  notes       String?
+  measuredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  membershipId  String
+  membership    Membership @relation(fields: [membershipId], references: [id])
+  amount        Float
+  status        PaymentStatus
+  paymentMethod String
+  transactionId String?   // For payment gateway reference
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+  REMINDER
+}
+
+// Indexes for better query performance
+index User_email_index on User(email)
+index Membership_userId_index on Membership(userId)
+index Membership_status_index on Membership(status)
+index GymClass_trainerId_index on GymClass(trainerId)
+index Enrollment_userId_index on Enrollment(userId)
+index Enrollment_classId_index on Enrollment(classId)
+index Measurement_userId_index on Measurement(userId)
