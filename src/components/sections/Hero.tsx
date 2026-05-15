@@ -1,100 +1,149 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Star, Users, Calendar } from "lucide-react";
-import heroImage from "@/assets/hero-gym.jpg";
+import { motion } from 'framer-motion';
+import { ArrowRight, ChevronDown, Users, Dumbbell, MapPin } from 'lucide-react';
 
-const Hero = () => {
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+export interface HeroProps {
+  className?: string;
+}
+
+const headlineWords = ['YOUR', 'FITNESS', 'JOURNEY', 'STARTS', 'HERE'];
+
+const wordVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, duration: 0.5, ease: 'easeOut' as const },
+  }),
+};
+
+const stats = [
+  { icon: Users, value: '500+', label: 'Members' },
+  { icon: Dumbbell, value: '10+', label: 'Programs' },
+  { icon: MapPin, value: '2', label: 'Locations' },
+];
+
+export default function Hero({ className = '' }: HeroProps) {
+  const scrollTo = (href: string) => {
+    const el = document.querySelector(href);
+    el?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0">
-        <img
-          src={heroImage}
-          alt="Snipfit Premium Gym Interior"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/50"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-      </div>
+    <section
+      id="home"
+      className={`relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0A0A0A] ${className}`}
+    >
+      {/* Radial gradient */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 20% 0%, rgba(14,165,233,0.08) 0%, transparent 60%)',
+        }}
+      />
 
-      {/* Hero Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center">
-        <div className="max-w-4xl mx-auto animate-fade-in">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-8 text-sm font-medium">
-            <Star className="w-4 h-4 text-accent" />
-            <span className="text-foreground">North Delhi's #1 Premium Fitness Center</span>
-          </div>
+      {/* Grid pattern overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px',
+        }}
+      />
 
-          {/* Main Heading */}
-          <h1 className="heading-hero mb-6">
-            TRANSFORM YOUR
-            <br />
-            <span className="text-premium">FITNESS JOURNEY</span>
-          </h1>
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-32 text-center">
+        {/* Tag pill */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 inline-flex items-center rounded-full border border-primary/40 px-4 py-1.5 text-sm text-primary"
+        >
+          🏋️ Delhi&apos;s #1 Transformation Gym
+        </motion.div>
 
-          {/* Subheading */}
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            Experience state-of-the-art equipment, expert trainers, and a community 
-            that pushes you to achieve your ultimate fitness goals.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button 
-              onClick={() => scrollToSection("#membership")}
-              className="btn-hero text-lg px-8 py-4 group"
+        {/* Staggered headline */}
+        <h1 className="mb-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-5xl font-black tracking-tight md:text-7xl">
+          {headlineWords.map((word, i) => (
+            <motion.span
+              key={word}
+              custom={i}
+              initial="hidden"
+              animate="visible"
+              variants={wordVariants}
+              className={word === 'HERE' ? 'text-primary' : 'text-white'}
             >
-              Start Your Journey
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            
-            <Button 
-              variant="outline"
-              className="btn-ghost text-lg px-8 py-4 group"
+              {word}
+            </motion.span>
+          ))}
+        </h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="mx-auto mb-10 max-w-2xl text-lg text-gray-450 md:text-xl"
+        >
+          North Delhi&apos;s premier transformation gym. 500+ members. 10+ specialized programs.
+          Two Rohini locations.
+        </motion.p>
+
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+          className="mb-12 flex flex-col items-center justify-center gap-4 sm:flex-row"
+        >
+          <button
+            type="button"
+            onClick={() => scrollTo('#contact')}
+            className="btn-primary px-8 py-4 text-lg transition-transform hover:scale-105"
+          >
+            Book Free Trial
+            <ArrowRight className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollTo('#programs')}
+            className="btn-secondary px-8 py-4 text-lg transition-transform hover:scale-105"
+          >
+            View Programs
+          </button>
+        </motion.div>
+
+        {/* Stats pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-4"
+        >
+          {stats.map(({ icon: Icon, value, label }) => (
+            <motion.div
+              key={label}
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-2"
             >
-              <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-              Watch Tour
-            </Button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
-            <div className="glass-card p-6 hover-lift">
-              <Users className="w-8 h-8 text-primary-glow mx-auto mb-3" />
-              <div className="text-3xl font-oswald font-bold text-foreground mb-1">2500+</div>
-              <div className="text-muted-foreground text-sm">Active Members</div>
-            </div>
-            
-            <div className="glass-card p-6 hover-lift">
-              <Calendar className="w-8 h-8 text-accent mx-auto mb-3" />
-              <div className="text-3xl font-oswald font-bold text-foreground mb-1">5+</div>
-              <div className="text-muted-foreground text-sm">Years Excellence</div>
-            </div>
-            
-            <div className="glass-card p-6 hover-lift">
-              <Star className="w-8 h-8 text-success mx-auto mb-3" />
-              <div className="text-3xl font-oswald font-bold text-foreground mb-1">98%</div>
-              <div className="text-muted-foreground text-sm">Success Rate</div>
-            </div>
-          </div>
-        </div>
+              <Icon className="h-4 w-4 text-primary" />
+              <span className="font-bold text-white">{value}</span>
+              <span className="text-sm text-gray-450">{label}</span>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-primary rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-primary rounded-full mt-2 animate-pulse"></div>
-        </div>
-      </div>
+      {/* Scroll indicator */}
+      <button
+        type="button"
+        onClick={() => scrollTo('#programs')}
+        aria-label="Scroll down"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-primary"
+      >
+        <ChevronDown className="h-8 w-8" />
+      </button>
     </section>
   );
-};
-
-export default Hero;
+}

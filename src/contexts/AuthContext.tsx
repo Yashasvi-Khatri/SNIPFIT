@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { useAuthLogin, useAuthRegister, useAuthMe } from '@/hooks/useApi';
+import { apiClient, setAccessToken, getAccessToken } from '@/lib/api';
 
 type User = {
   id: string;
@@ -13,91 +13,123 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
+  accessToken: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  loading: boolean;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+  isAuthenticated: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const loginMutation = useAuthLogin();
-  const registerMutation = useAuthRegister();
-  const { data: userData, isLoading: authLoading } = useAuthMe();
-
+  // On app load, try to restore session using refresh token
   useEffect(() => {
-    if (!authLoading) {
-      if (userData?.user) {
-        setUser(userData.user);
-      } else {
-        // Check for existing session in localStorage as fallback
-        const token = localStorage.getItem('authToken');
-        const storedUserData = localStorage.getItem('userData');
-        if (token && storedUserData) {
-          try {
-            const parsedUser = JSON.parse(storedUserData);
-            setUser(parsedUser);
-          } catch (error) {
-            console.error('Failed to parse stored user data:', error);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userData');
+    const restoreSession = async () => {
+      try {
+        // Call refresh endpoint to get new access token
+        const response = await apiClient.auth.refresh();
+        
+        if (response.data.success && response.data.accessToken) {
+          setAccessToken(response.data.accessToken);
+          
+          // Fetch user data
+          const meResponse = await apiClient.auth.me();
+          
+          if (meResponse.data.success && meResponse.data.user) {
+            setUser(meResponse.data.user);
           }
         }
+      } catch (error) {
+        // No valid refresh token, user is not logged in
+        setAccessToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setLoading(false);
-    }
-  }, [userData, authLoading]);
+    };
+
+    restoreSession();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      setLoading(true);
-      await loginMutation.mutateAsync({ email, password });
-      // The mutation handles token storage and user data
-      const storedUserData = localStorage.getItem('userData');
-      if (storedUserData) {
-        const parsedUser = JSON.parse(storedUserData);
-        setUser(parsedUser);
+      setIsLoading(true);
+      const response = await apiClient.auth.login(email, password);
+      
+      if (response.data.success) {
+        setAccessToken(response.data.accessToken);
+        setUser(response.data.user);
+        toast({
+          title: 'Login successful',
+          description: 'Welcome back!',
+        });
       }
-    } catch (error) {
-      // Error handling is done in the mutation
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Login failed';
+      toast({
+        title: 'Login failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
       throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, phone?: string) => {
     try {
-      setLoading(true);
-      await registerMutation.mutateAsync({ name, email, password });
-      // The mutation handles token storage and user data
-      const storedUserData = localStorage.getItem('userData');
-      if (storedUserData) {
-        const parsedUser = JSON.parse(storedUserData);
-        setUser(parsedUser);
+      setIsLoading(true);
+      const response = await apiClient.auth.register(name, email, password, phone);
+      
+      if (response.data.success) {
+        setAccessToken(response.data.accessToken);
+        setUser(response.data.user);
+        toast({
+          title: 'Registration successful',
+          description: 'Your account has been created!',
+        });
       }
-    } catch (error) {
-      // Error handling is done in the mutation
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Registration failed';
+      toast({
+        title: 'Registration failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
       throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    setUser(null);
-    // Navigation should be handled by the component that calls logout
+  const logout = async () => {
+    try {
+      await apiClient.auth.logout();
+    } catch (error) {
+      // Ignore logout errors, just clear local state
+      console.error('Logout error:', error);
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+      toast({
+        title: 'Logged out',
+        description: 'You have been logged out successfully.',
+      });
+      // Navigation should be handled by the component that calls logout
+    }
   };
+
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, accessToken: getAccessToken(), login, register, logout, isLoading, isAuthenticated }}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 };
