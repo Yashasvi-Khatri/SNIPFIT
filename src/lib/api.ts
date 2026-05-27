@@ -153,6 +153,12 @@ export const apiClient = {
     getStats: () => api.get('/api/dashboard/stats'),
   },
 
+  // Member endpoints
+  members: {
+    getDashboard: () => api.get('/api/members/me/dashboard'),
+    getCard: () => api.get('/api/members/me/card'),
+  },
+
   // Contact form (public)
   contact: {
     submit: (data: {

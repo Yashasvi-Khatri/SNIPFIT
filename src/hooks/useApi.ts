@@ -152,6 +152,21 @@ export const useDashboardStats = () => {
   });
 };
 
+// Member hooks
+export const useMemberDashboard = () => {
+  return useQuery({
+    queryKey: ['member-dashboard'],
+    queryFn: () => apiClient.members.getDashboard().then(res => res.data),
+  });
+};
+
+export const useMemberCard = () => {
+  return useQuery({
+    queryKey: ['member-card'],
+    queryFn: () => apiClient.members.getCard().then(res => res.data),
+  });
+};
+
 // Auth hooks
 export const useAuthLogin = () => {
   const queryClient = useQueryClient();

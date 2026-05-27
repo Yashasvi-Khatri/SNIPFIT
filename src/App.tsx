@@ -11,6 +11,8 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
 import Admin from './pages/Admin';
+import MemberDashboard from './pages/member/Dashboard';
+import MemberCard from './pages/member/Card';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -32,6 +34,8 @@ const App = () => (
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/member/dashboard" element={<MemberDashboard />} />
+                <Route path="/member/card" element={<MemberCard />} />
               </Route>
 
               <Route element={<AdminRoute />}>

@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import dashboardRoutes from './routes/dashboard';
 import contactRoutes from './routes/contact';
 import classesRoutes from './routes/classes';
+import membersRoutes from './routes/members';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
 import { validate } from './middleware/validate';
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/classes', classesRoutes);
+app.use('/api/members', membersRoutes);
 
 // User routes (protected)
 app.get('/api/users', authenticate, async (req: Request, res: Response, next: NextFunction) => {
