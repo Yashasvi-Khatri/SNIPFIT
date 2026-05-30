@@ -58,7 +58,7 @@ model User {
   email         String    @unique
   name          String
   phone         String?
-  passwordHash  String
+  passwordHash  String?
   role          Role      @default(MEMBER)
   avatarUrl     String?
   dateOfBirth   DateTime?
@@ -67,6 +67,12 @@ model User {
   emergencyContact String?
   refreshToken  String?
   deletedAt     DateTime?
+  passwordResetToken String?
+  passwordResetExpiry DateTime?
+  adminSecurityCode String?  // Additional security code for admin login
+  failedLoginAttempts Int @default(0)  // Track failed login attempts
+  lastFailedLoginAt DateTime?
+  accountLockedUntil DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -80,6 +86,7 @@ model User {
   trainedClasses GymClass[] @relation("TrainerClasses")
   progressPhotos ProgressPhoto[]
   contactForms  ContactForm[]
+  adminLoginLogs AdminLoginLog[]
 }
 
 model Membership {
@@ -223,6 +230,17 @@ model ContactForm {
   interest  String
   message   String
   resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AdminLoginLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  ipAddress String?
+  userAgent String?
+  success   Boolean
+  failureReason String?
   createdAt DateTime @default(now())
 }
 

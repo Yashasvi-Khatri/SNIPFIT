@@ -140,7 +140,7 @@ export default function Footer({ className = '' }: FooterProps) {
               <div className="space-y-2">
                 <div className="flex items-start gap-2 text-sm text-gray-450">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>Sector-24, Rohini, New Delhi - 110085</span>
+                  <span>Prashant Vihar, New Delhi</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-450">
                   <Phone className="h-4 w-4 shrink-0 text-primary" />
@@ -166,8 +166,8 @@ export default function Footer({ className = '' }: FooterProps) {
 
       <div className="border-t border-[#1F1F1F] px-4 py-6">
         <div className="container-max flex flex-col items-center justify-between gap-4 text-sm text-gray-450 sm:flex-row">
-          <p>© 2025 SNIPFIT. All rights reserved.</p>
-          <p>Made with ❤️ in Delhi</p>
+          <p>© 2026 SNIPFIT. All rights reserved.</p>
+          <p>NO GYM IS PERFECT, BUT WE ARE TRYING OUR BEST</p>
         </div>
       </div>
     </footer>

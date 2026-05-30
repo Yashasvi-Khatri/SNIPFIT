@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dumbbell, Menu, X } from 'lucide-react';
+import { Dumbbell, LogOut, Menu, UserCircle, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navLinks = [
   { label: 'Home', href: '#home' },
@@ -15,6 +16,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -35,6 +37,17 @@ export default function Navbar() {
     } else {
       navigate(href);
     }
+  };
+
+  const goToDashboard = () => {
+    setMenuOpen(false);
+    navigate(user?.role === 'ADMIN' ? '/admin' : '/member/dashboard');
+  };
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    await logout();
+    navigate('/login');
   };
 
   const Logo = () => (
@@ -73,9 +86,22 @@ export default function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link to="/login" className="btn-ghost text-sm px-4 py-2">
-            Member Login
-          </Link>
+          {user ? (
+            <>
+              <button type="button" onClick={goToDashboard} className="btn-ghost inline-flex items-center gap-2 text-sm px-4 py-2">
+                <UserCircle className="h-4 w-4" />
+                Dashboard
+              </button>
+              <button type="button" onClick={handleLogout} className="btn-ghost inline-flex items-center gap-2 text-sm px-4 py-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="btn-ghost text-sm px-4 py-2">
+              Member Login
+            </Link>
+          )}
           <button type="button" onClick={() => scrollTo('#contact')} className="btn-primary text-sm px-5 py-2.5">
             Free Trial
           </button>
@@ -113,9 +139,22 @@ export default function Navbar() {
             ))}
           </ul>
           <div className="flex flex-col gap-3 p-8">
-            <Link to="/login" className="btn-ghost w-full text-center py-3" onClick={() => setMenuOpen(false)}>
-              Member Login
-            </Link>
+            {user ? (
+              <>
+                <button type="button" className="btn-ghost flex w-full items-center justify-center gap-2 py-3" onClick={goToDashboard}>
+                  <UserCircle className="h-4 w-4" />
+                  Dashboard
+                </button>
+                <button type="button" className="btn-ghost flex w-full items-center justify-center gap-2 py-3" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="btn-ghost w-full text-center py-3" onClick={() => setMenuOpen(false)}>
+                Member Login
+              </Link>
+            )}
             <button type="button" className="btn-primary w-full py-3" onClick={() => scrollTo('#contact')}>
               Free Trial
             </button>

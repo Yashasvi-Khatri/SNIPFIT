@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import { apiClient, setAccessToken, getAccessToken } from '@/lib/api';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { apiClient, setAccessToken, getAccessToken, setAuthUserHint } from '@/lib/api';
 
 type User = {
   id: string;
@@ -14,7 +16,7 @@ type User = {
 type AuthContextType = {
   user: User | null;
   accessToken: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | null>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -23,30 +25,98 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const clearStoredSupabaseSession = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  Object.keys(window.localStorage)
+    .filter((key) => key.startsWith('sb-') && key.endsWith('-auth-token'))
+    .forEach((key) => window.localStorage.removeItem(key));
+};
+
+const buildUserFromSession = (session: Session): User => {
+  const metadata = session.user.user_metadata ?? {};
+  const email = session.user.email ?? '';
+
+  return {
+    id: session.user.id,
+    email,
+    name: (metadata.name as string | undefined) || email.split('@')[0] || 'User',
+    role: (metadata.role as string | undefined) || 'MEMBER',
+    createdAt: session.user.created_at || new Date().toISOString(),
+    updatedAt: session.user.updated_at || session.user.created_at || new Date().toISOString(),
+  };
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastSyncedAccessToken = useRef<string | null>(null);
 
-  // On app load, try to restore session using refresh token
+  const handleUnauthorized = async () => {
+    setAccessToken(null);
+    setAuthUserHint(null);
+    setUser(null);
+
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Supabase sign out error:', error);
+    }
+  };
+
+  const syncBackendUser = async (session: Session): Promise<User> => {
+    const fallbackUser = buildUserFromSession(session);
+    setUser(fallbackUser);
+    setAuthUserHint({ email: fallbackUser.email, name: fallbackUser.name });
+
+    if (lastSyncedAccessToken.current === session.access_token) {
+      return fallbackUser;
+    }
+
+    lastSyncedAccessToken.current = session.access_token;
+
+    try {
+      const meResponse = await apiClient.auth.me(session.access_token);
+
+      if (meResponse.data.success && meResponse.data.user) {
+        setUser(meResponse.data.user);
+        return meResponse.data.user;
+      }
+    } catch (apiError: any) {
+      console.warn('Backend profile sync skipped:', apiError?.response?.data?.error || apiError.message);
+      // Keep the Supabase user as a fallback if the backend sync is temporarily unavailable.
+    }
+
+    return fallbackUser;
+  };
+
+  // On app load, try to restore session using Supabase
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        // Call refresh endpoint to get new access token
-        const response = await apiClient.auth.refresh();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (response.data.success && response.data.accessToken) {
-          setAccessToken(response.data.accessToken);
-          
-          // Fetch user data
-          const meResponse = await apiClient.auth.me();
-          
-          if (meResponse.data.success && meResponse.data.user) {
-            setUser(meResponse.data.user);
-          }
+        if (error) {
+          console.error('Supabase session error:', error);
+          clearStoredSupabaseSession();
+          setAccessToken(null);
+          setAuthUserHint(null);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (session) {
+          await syncBackendUser(session);
+          setAccessToken(session.access_token);
         }
       } catch (error) {
-        // No valid refresh token, user is not logged in
+        console.error('Session restore error:', error);
+        // No valid session, user is not logged in
         setAccessToken(null);
+        setAuthUserHint(null);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -54,23 +124,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     restoreSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await syncBackendUser(session);
+        setAccessToken(session.access_token);
+      } else if (event === 'SIGNED_OUT') {
+        setAccessToken(null);
+        setAuthUserHint(null);
+        setUser(null);
+      }
+    });
+
+    const handleUnauthorizedEvent = () => {
+      void handleUnauthorized();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('snipfit:unauthorized', handleUnauthorizedEvent);
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('snipfit:unauthorized', handleUnauthorizedEvent);
+      }
+    };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User | null> => {
     try {
       setIsLoading(true);
-      const response = await apiClient.auth.login(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      if (response.data.success) {
-        setAccessToken(response.data.accessToken);
-        setUser(response.data.user);
+      if (error) throw error;
+      
+      if (data.session) {
+        const loggedInUser = await syncBackendUser(data.session);
+        setAccessToken(data.session.access_token);
+        
         toast({
           title: 'Login successful',
           description: 'Welcome back!',
         });
+
+        return loggedInUser;
       }
+
+      return null;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Login failed';
+      const errorMessage = error.message || 'Login failed';
       toast({
         title: 'Login failed',
         description: errorMessage,
@@ -85,18 +192,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string, phone?: string) => {
     try {
       setIsLoading(true);
-      const response = await apiClient.auth.register(name, email, password, phone);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            phone,
+          },
+        },
+      });
       
-      if (response.data.success) {
-        setAccessToken(response.data.accessToken);
-        setUser(response.data.user);
+      if (error) throw error;
+      
+      if (data.session) {
+        await syncBackendUser(data.session);
+        setAccessToken(data.session.access_token);
+        
         toast({
           title: 'Registration successful',
           description: 'Your account has been created!',
         });
+      } else {
+        // Email confirmation required
+        toast({
+          title: 'Registration successful',
+          description: 'Please check your email to confirm your account.',
+        });
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Registration failed';
+      const errorMessage = error.message || 'Registration failed';
       toast({
         title: 'Registration failed',
         description: errorMessage,
@@ -110,18 +235,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiClient.auth.logout();
+      await supabase.auth.signOut();
     } catch (error) {
-      // Ignore logout errors, just clear local state
       console.error('Logout error:', error);
     } finally {
       setAccessToken(null);
+      setAuthUserHint(null);
       setUser(null);
       toast({
         title: 'Logged out',
         description: 'You have been logged out successfully.',
       });
-      // Navigation should be handled by the component that calls logout
     }
   };
 

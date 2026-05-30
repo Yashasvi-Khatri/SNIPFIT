@@ -44,11 +44,11 @@ const locations: LocationInfo[] = [
     mapsUrl: 'https://maps.google.com/?q=Snipfit+Sector+11+Rohini',
   },
   {
-    name: 'Snipfit Sector 24',
-    address: 'Lower Ground Floor, Plot No-6, PKT-15A, Sector-24, Rohini, Delhi',
+    name: 'SNIPFIT Prashant Vihar',
+    address: 'Prashant Vihar, New Delhi',
     phone: '+91 98108 92889',
     hours: '5:00 AM - 11:00 PM (Mon-Sun)',
-    mapsUrl: 'https://maps.google.com/?q=Snipfit+Sector+24+Rohini',
+    mapsUrl: 'https://www.google.com/maps/place/snipfit+prashant+vihar/data=!4m2!3m1!1s0x390d01d3a5c9e99f:0xaa9074e8bea3be04?sa=X&ved=1t:242&ictx=111',
   },
 ];
 

@@ -35,7 +35,7 @@ const Index = () => {
               Transform your fitness journey with North Delhi's premier gym experience.
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-              <span>© 2024 Snipfit Fitness Center</span>
+              <span>© 2026 Snipfit Fitness Center</span>
               <span>•</span>
               <span>Privacy Policy</span>
               <span>•</span>

@@ -13,7 +13,8 @@ import {
   LogOut,
   ArrowLeft,
   Download,
-  Share2
+  Share2,
+  CalendarClock
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { format } from 'date-fns';
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { id: 'workouts', label: 'Workout Log', icon: <Dumbbell size={20} />, path: '/member/workouts' },
   { id: 'progress', label: 'Progress', icon: <TrendingUp size={20} />, path: '/member/progress' },
   { id: 'classes', label: 'Classes', icon: <Calendar size={20} />, path: '/member/classes' },
+  { id: 'bookings', label: 'My Bookings', icon: <CalendarClock size={20} />, path: '/member/bookings' },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/member/settings' },
 ];
 
@@ -292,7 +294,7 @@ export default function MemberCard() {
         {/* Bottom Tab Bar - Mobile */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-2">
           <div className="flex justify-around">
-            {navItems.slice(0, 5).map((item) => (
+            {navItems.slice(0, 6).map((item) => (
               <button
                 key={item.id}
                 onClick={() => {

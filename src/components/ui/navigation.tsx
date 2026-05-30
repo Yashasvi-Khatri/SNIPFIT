@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, LogOut, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,18 +19,14 @@ const Navigation = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
-    };
-    const handleLogout = () => {
-      logout();
-      navigate('/login');
     };
     window.addEventListener("scroll", handleScroll);
     return () => {

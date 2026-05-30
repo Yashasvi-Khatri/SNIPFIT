@@ -73,10 +73,10 @@ export const useCreateMembership = () => {
 };
 
 // Gym Classes hooks
-export const useGymClasses = () => {
+export const useGymClasses = (params?: { startDate?: string; endDate?: string; type?: string; trainerId?: string }) => {
   return useQuery({
-    queryKey: ['classes'],
-    queryFn: () => apiClient.classes.getAll().then(res => res.data),
+    queryKey: ['classes', params],
+    queryFn: () => apiClient.classes.getAll(params).then(res => res.data),
   });
 };
 
@@ -85,6 +85,63 @@ export const useGymClass = (id: string) => {
     queryKey: ['class', id],
     queryFn: () => apiClient.classes.getById(id).then(res => res.data),
     enabled: !!id,
+  });
+};
+
+export const useBookClass = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (classId: string) =>
+      apiClient.classes.book(classId).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Booking confirmed',
+        description: 'You have been successfully enrolled in the class.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Booking failed',
+        description: error.response?.data?.error || 'Failed to book class',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useCancelBooking = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (classId: string) =>
+      apiClient.classes.cancelBooking(classId).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] });
+      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Booking cancelled',
+        description: 'Your booking has been cancelled successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Cancellation failed',
+        description: error.response?.data?.error || 'Failed to cancel booking',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useMyBookings = () => {
+  return useQuery({
+    queryKey: ['my-bookings'],
+    queryFn: () => apiClient.classes.getMyBookings().then(res => res.data),
   });
 };
 
@@ -167,61 +224,249 @@ export const useMemberCard = () => {
   });
 };
 
+// Workout hooks
+export const useWorkouts = (params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) => {
+  return useQuery({
+    queryKey: ['workouts', params],
+    queryFn: () => apiClient.workouts.getAll(params).then(res => res.data),
+  });
+};
+
+export const useWorkout = (id: string) => {
+  return useQuery({
+    queryKey: ['workout', id],
+    queryFn: () => apiClient.workouts.getById(id).then(res => res.data),
+    enabled: !!id,
+  });
+};
+
+export const useWorkoutStats = () => {
+  return useQuery({
+    queryKey: ['workout-stats'],
+    queryFn: () => apiClient.workouts.getStats().then(res => res.data),
+  });
+};
+
+export const useCreateWorkout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) =>
+      apiClient.workouts.create(data).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Workout saved',
+        description: 'Your workout has been logged successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to save workout',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useUpdateWorkout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      apiClient.workouts.update(id, data).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Workout updated',
+        description: 'Your workout has been updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to update workout',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useDeleteWorkout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.workouts.delete(id).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['workout-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Workout deleted',
+        description: 'Your workout has been deleted.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to delete workout',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+// Measurement hooks
+export const useMeasurements = () => {
+  return useQuery({
+    queryKey: ['measurements'],
+    queryFn: () => apiClient.measurements.getAll().then(res => res.data),
+  });
+};
+
+export const useCreateMeasurement = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) =>
+      apiClient.measurements.create(data).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['measurements'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Measurement saved',
+        description: 'Your measurement has been recorded successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to save measurement',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useDeleteMeasurement = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.measurements.delete(id).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['measurements'] });
+      queryClient.invalidateQueries({ queryKey: ['member-dashboard'] });
+      toast({
+        title: 'Measurement deleted',
+        description: 'Your measurement has been deleted.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to delete measurement',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+// Admin hooks
+export const useAdminStats = () => {
+  return useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: () => apiClient.admin.getStats().then(res => res.data),
+  });
+};
+
+export const useExpiringMembers = () => {
+  return useQuery({
+    queryKey: ['expiring-members'],
+    queryFn: () => apiClient.admin.getExpiring().then(res => res.data),
+  });
+};
+
+export const useMonthlyRevenue = () => {
+  return useQuery({
+    queryKey: ['monthly-revenue'],
+    queryFn: () => apiClient.admin.getMonthlyRevenue().then(res => res.data),
+  });
+};
+
+export const useDeleteMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.admin.deleteMember(id).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-members'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      toast({
+        title: 'Member deleted',
+        description: 'Member has been deleted successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Delete failed',
+        description: error.response?.data?.error || 'Failed to delete member',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
 // Auth hooks
-export const useAuthLogin = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      apiClient.auth.login(email, password).then(res => res.data),
-    onSuccess: (data) => {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userData', JSON.stringify(data.user));
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
-      toast({
-        title: 'Login successful',
-        description: 'Welcome back to Snipfit!',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Login failed',
-        description: error.response?.data?.error || 'Invalid credentials',
-        variant: 'destructive',
-      });
-    },
-  });
-};
-
-export const useAuthRegister = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ name, email, password }: { name: string; email: string; password: string }) =>
-      apiClient.auth.register(name, email, password).then(res => res.data),
-    onSuccess: (data) => {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userData', JSON.stringify(data.user));
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
-      toast({
-        title: 'Account created',
-        description: 'Your account has been created successfully!',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Registration failed',
-        description: error.response?.data?.error || 'Failed to create account',
-        variant: 'destructive',
-      });
-    },
-  });
-};
-
 export const useAuthMe = () => {
   return useQuery({
     queryKey: ['auth', 'me'],
-    queryFn: () => apiClient.auth.me().then(res => res.data),
+    queryFn: () => apiClient.auth.me().then((res: any) => res.data),
     retry: false,
+  });
+};
+
+// Admin Auth hooks
+export const useVerifyAdminSecurityCode = () => {
+  return useMutation({
+    mutationFn: ({ email, securityCode }: { email: string; securityCode: string }) =>
+      apiClient.adminAuth.verifySecurityCode(email, securityCode).then(res => res.data),
+  });
+};
+
+export const useSetAdminSecurityCode = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, currentCode, newCode }: { userId: string; currentCode?: string; newCode: string }) =>
+      apiClient.adminAuth.setSecurityCode(userId, currentCode, newCode).then(res => res.data),
+    onSuccess: () => {
+      toast({
+        title: 'Security code updated',
+        description: 'Your admin security code has been updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to update security code',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useAdminLoginHistory = (userId: string) => {
+  return useQuery({
+    queryKey: ['admin-login-history', userId],
+    queryFn: () => apiClient.adminAuth.getLoginHistory(userId).then(res => res.data),
+    enabled: !!userId,
   });
 };

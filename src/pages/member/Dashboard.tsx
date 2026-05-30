@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
   { id: 'workouts', label: 'Workout Log', icon: <Dumbbell size={20} />, path: '/member/workouts' },
   { id: 'progress', label: 'Progress', icon: <TrendingUp size={20} />, path: '/member/progress' },
   { id: 'classes', label: 'Classes', icon: <Calendar size={20} />, path: '/member/classes' },
+  { id: 'bookings', label: 'My Bookings', icon: <CalendarClock size={20} />, path: '/member/bookings' },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/member/settings' },
 ];
 
@@ -55,7 +56,7 @@ export default function MemberDashboard() {
 
   const getFirstName = (name: string | undefined): string => {
     if (!name) return 'Member';
-    return name.split(' ')[0];
+    return (name as string).split(' ')[0] || 'Member';
   };
 
   if (isLoading) {
@@ -257,10 +258,15 @@ export default function MemberDashboard() {
 
             {/* Upcoming Classes */}
             <div className="bg-surface p-6 rounded-lg border border-border mb-8">
-              <h2 className="text-xl font-semibold mb-4">Upcoming Classes</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Upcoming Classes</h2>
+                <Button variant="link" onClick={() => navigate('/member/classes')} className="text-orange-500">
+                  View All
+                </Button>
+              </div>
               {upcomingClasses.length > 0 ? (
                 <div className="space-y-4">
-                  {upcomingClasses.map((classItem) => (
+                  {upcomingClasses.map((classItem: any) => (
                     <div key={classItem.bookingId} className="flex items-center justify-between p-4 bg-surface-elevated rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -291,10 +297,15 @@ export default function MemberDashboard() {
 
             {/* Recent Workouts */}
             <div className="bg-surface p-6 rounded-lg border border-border mb-8">
-              <h2 className="text-xl font-semibold mb-4">Recent Workouts</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Recent Workouts</h2>
+                <Button variant="link" onClick={() => navigate('/member/workouts')} className="text-orange-500">
+                  View All
+                </Button>
+              </div>
               {recentWorkouts.length > 0 ? (
                 <div className="space-y-4">
-                  {recentWorkouts.map((workout) => (
+                  {recentWorkouts.map((workout: any) => (
                     <div key={workout.id} className="flex items-center justify-between p-4 bg-surface-elevated rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="p-2 bg-green-100 rounded-lg">
@@ -352,7 +363,7 @@ export default function MemberDashboard() {
         {/* Bottom Tab Bar - Mobile */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-2">
           <div className="flex justify-around">
-            {navItems.slice(0, 5).map((item) => (
+            {navItems.slice(0, 6).map((item) => (
               <button
                 key={item.id}
                 onClick={() => {

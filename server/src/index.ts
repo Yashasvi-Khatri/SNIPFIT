@@ -1,19 +1,22 @@
+import './config/env';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth';
+import adminAuthRoutes from './routes/adminAuth';
 import dashboardRoutes from './routes/dashboard';
 import contactRoutes from './routes/contact';
 import classesRoutes from './routes/classes';
 import membersRoutes from './routes/members';
+import workoutsRoutes from './routes/workouts';
+import measurementsRoutes from './routes/measurements';
+import adminRoutes from './routes/admin';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
 import { validate } from './middleware/validate';
 import { z } from 'zod';
-
-dotenv.config();
+import './jobs/reminderCron';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -21,7 +24,22 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all localhost origins during development
+    if (origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+    
+    // Allow the configured frontend URL
+    if (origin === process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(cookieParser());
@@ -34,10 +52,14 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin-auth', adminAuthRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/members', membersRoutes);
+app.use('/api/workouts', workoutsRoutes);
+app.use('/api/measurements', measurementsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // User routes (protected)
 app.get('/api/users', authenticate, async (req: Request, res: Response, next: NextFunction) => {

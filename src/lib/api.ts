@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'ax
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,6 +11,7 @@ const api = axios.create({
 
 // Global variable to store access token in memory
 let accessToken: string | null = null;
+let authUserHint: { email: string; name?: string } | null = null;
 
 // Function to set access token (called by AuthContext)
 export const setAccessToken = (token: string | null): void => {
@@ -22,19 +23,8 @@ export const getAccessToken = (): string | null => {
   return accessToken;
 };
 
-// Flag to prevent multiple refresh attempts
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string | null) => void> = [];
-
-// Function to add subscriber for token refresh
-const subscribeTokenRefresh = (callback: (token: string | null) => void): void => {
-  refreshSubscribers.push(callback);
-};
-
-// Function to notify all subscribers
-const onTokenRefreshed = (token: string | null): void => {
-  refreshSubscribers.forEach((callback) => callback(token));
-  refreshSubscribers = [];
+export const setAuthUserHint = (user: { email: string; name?: string } | null): void => {
+  authUserHint = user;
 };
 
 // Request interceptor to add auth token
@@ -43,6 +33,12 @@ api.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+    if (authUserHint?.email) {
+      config.headers['X-Snipfit-User-Email'] = authUserHint.email;
+    }
+    if (authUserHint?.name) {
+      config.headers['X-Snipfit-User-Name'] = authUserHint.name;
+    }
     return config;
   },
   (error: AxiosError) => {
@@ -50,70 +46,40 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle 401 errors
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const requestUrl = error.config?.url || '';
 
-    // If error is 401 and we haven't tried refreshing yet
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      if (isRefreshing) {
-        // If already refreshing, wait for the refresh to complete
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string | null) => {
-            if (token) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            resolve(api(originalRequest));
-          });
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        // Try to refresh the token
-        const refreshResponse = await api.post('/api/auth/refresh');
-        
-        if (refreshResponse.data.success && refreshResponse.data.accessToken) {
-          const newAccessToken = refreshResponse.data.accessToken;
-          setAccessToken(newAccessToken);
-          onTokenRefreshed(newAccessToken);
-          
-          // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed - notify subscribers and clear token
-        setAccessToken(null);
-        onTokenRefreshed(null);
-        
-        // Redirect to login
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+    // `/api/auth/me` is used for bootstrap/profile sync, so a 401 there should not
+    // immediately force a full auth reset during login.
+    if (error.response?.status === 401 && requestUrl.includes('/api/admin')) {
+      setAccessToken(null);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('snipfit:unauthorized'));
       }
     }
-
     return Promise.reject(error);
   }
 );
 
 // API functions
 export const apiClient = {
-  // Auth endpoints
+  // Auth endpoints (simplified - Supabase handles auth)
   auth: {
-    login: (email: string, password: string) =>
-      api.post('/api/auth/login', { email, password }),
-    register: (name: string, email: string, password: string, phone?: string) =>
-      api.post('/api/auth/register', { name, email, password, phone }),
-    refresh: () => api.post('/api/auth/refresh'),
-    logout: () => api.post('/api/auth/logout'),
-    me: () => api.get('/api/auth/me'),
+    me: (token?: string) =>
+      api.get('/api/auth/me', token
+        ? {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : undefined),
+    login: (data: { email: string; password: string }) =>
+      api.post('/api/auth/login', data),
+    register: (data: { email: string; name?: string }) =>
+      api.post('/api/auth/register', data),
   },
   
   // User endpoints
@@ -134,10 +100,14 @@ export const apiClient = {
   
   // Gym classes endpoints
   classes: {
-    getAll: () => api.get('/api/classes'),
+    getAll: (params?: { startDate?: string; endDate?: string; type?: string; trainerId?: string }) =>
+      api.get('/api/classes', { params }),
     getById: (id: string) => api.get(`/api/classes/${id}`),
     create: (data: any) => api.post('/api/classes', data),
-    update: (id: string, data: any) => api.put(`/api/classes/${id}`, data),
+    book: (classId: string) => api.post(`/api/classes/${classId}/book`),
+    cancelBooking: (classId: string) => api.delete(`/api/classes/${classId}/book`),
+    getMyBookings: () => api.get('/api/classes/my-bookings'),
+    update: (id: string, data: any) => api.patch(`/api/classes/${id}`, data),
     delete: (id: string) => api.delete(`/api/classes/${id}`),
   },
   
@@ -157,6 +127,47 @@ export const apiClient = {
   members: {
     getDashboard: () => api.get('/api/members/me/dashboard'),
     getCard: () => api.get('/api/members/me/card'),
+  },
+
+  // Workout endpoints
+  workouts: {
+    getAll: (params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) =>
+      api.get('/api/workouts', { params }),
+    getById: (id: string) => api.get(`/api/workouts/${id}`),
+    getStats: () => api.get('/api/workouts/stats'),
+    create: (data: any) => api.post('/api/workouts', data),
+    update: (id: string, data: any) => api.patch(`/api/workouts/${id}`, data),
+    delete: (id: string) => api.delete(`/api/workouts/${id}`),
+  },
+
+  // Measurement endpoints
+  measurements: {
+    getAll: () => api.get('/api/measurements'),
+    getLatest: () => api.get('/api/measurements/latest'),
+    create: (data: any) => api.post('/api/measurements', data),
+    delete: (id: string) => api.delete(`/api/measurements/${id}`),
+  },
+
+  // Admin endpoints
+  admin: {
+    getStats: () => api.get('/api/admin/stats'),
+    getMembers: (params?: { page?: number; limit?: number; q?: string; plan?: string; status?: string; sort?: string; order?: string }) =>
+      api.get('/api/admin/members', { params }),
+    getExpiring: () => api.get('/api/admin/members/expiring'),
+    updateRole: (id: string, role: string) => api.patch(`/api/admin/members/${id}/role`, { role }),
+    updateMembership: (id: string, data: any) => api.patch(`/api/admin/members/${id}/membership`, data),
+    deleteMember: (id: string) => api.delete(`/api/admin/members/${id}`),
+    getMonthlyRevenue: () => api.get('/api/admin/revenue/monthly'),
+  },
+
+  // Admin Auth endpoints
+  adminAuth: {
+    verifySecurityCode: (email: string, securityCode: string) =>
+      api.post('/api/admin-auth/verify-security-code', { email, securityCode }),
+    setSecurityCode: (userId: string, currentCode: string | undefined, newCode: string) =>
+      api.post('/api/admin-auth/set-security-code', { userId, currentCode, newCode }),
+    getLoginHistory: (userId: string) =>
+      api.get(`/api/admin-auth/login-history/${userId}`),
   },
 
   // Contact form (public)

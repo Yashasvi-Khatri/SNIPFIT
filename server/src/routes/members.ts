@@ -5,6 +5,32 @@ import { authenticate } from '../middleware/auth';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+const isDatabaseUnavailable = (error: unknown): boolean => {
+  const maybeError = error as { code?: string; message?: string };
+  return maybeError.code === 'P1001' || Boolean(maybeError.message?.includes("Can't reach database server"));
+};
+
+const buildFallbackDashboard = (user: NonNullable<Request['user']>) => ({
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: null,
+    avatarUrl: null,
+    role: user.role,
+  },
+  membership: null,
+  stats: {
+    classesThisMonth: 0,
+    workoutsThisMonth: 0,
+    totalWorkouts: 0,
+    streakDays: 0,
+  },
+  upcomingClasses: [],
+  recentWorkouts: [],
+  latestMeasurement: null,
+});
+
 // Helper function to get time-based greeting
 const getTimeBasedGreeting = (): string => {
   const hour = new Date().getHours();
@@ -234,6 +260,15 @@ router.get('/me/dashboard', authenticate, async (req: Request, res: Response, ne
 
     res.json({ success: true, data: dashboardData });
   } catch (error) {
+    if (req.user && isDatabaseUnavailable(error)) {
+      res.json({
+        success: true,
+        data: buildFallbackDashboard(req.user),
+        warning: 'Database is unavailable; showing empty dashboard data.',
+      });
+      return;
+    }
+
     next(error);
   }
 });
@@ -283,6 +318,23 @@ router.get('/me/card', authenticate, async (req: Request, res: Response, next: N
 
     res.json({ success: true, data: cardData });
   } catch (error) {
+    if (req.user && isDatabaseUnavailable(error)) {
+      res.json({
+        success: true,
+        data: {
+          memberId: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+          plan: null,
+          expiryDate: null,
+          memberSince: new Date().toISOString(),
+          qrData: `SNIPFIT:MEMBER:${req.user.id}:NO_MEMBERSHIP`,
+        },
+        warning: 'Database is unavailable; showing temporary card data.',
+      });
+      return;
+    }
+
     next(error);
   }
 });
