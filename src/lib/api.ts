@@ -170,6 +170,20 @@ export const apiClient = {
       api.get(`/api/admin-auth/login-history/${userId}`),
   },
 
+  // Admin Invitations endpoints
+  adminInvitations: {
+    invite: (email: string) =>
+      api.post('/api/admin-invitations/invite', { email }),
+    getAll: () =>
+      api.get('/api/admin-invitations'),
+    accept: (token: string, data: { name: string; password: string }) =>
+      api.post(`/api/admin-invitations/${token}/accept`, data),
+    cancel: (id: string) =>
+      api.delete(`/api/admin-invitations/${id}`),
+    resend: (id: string) =>
+      api.post(`/api/admin-invitations/${id}/resend`),
+  },
+
   // Contact form (public)
   contact: {
     submit: (data: {

@@ -470,3 +470,103 @@ export const useAdminLoginHistory = (userId: string) => {
     enabled: !!userId,
   });
 };
+
+// Admin Invitations hooks
+export const useInviteAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (email: string) =>
+      apiClient.adminInvitations.invite(email).then(res => res.data),
+    onSuccess: () => {
+      toast({
+        title: 'Admin invitation sent',
+        description: 'The invitation has been sent to the email address.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to send invitation',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useAdminInvitations = () => {
+  return useQuery({
+    queryKey: ['admin-invitations'],
+    queryFn: () => apiClient.adminInvitations.getAll().then(res => res.data),
+  });
+};
+
+export const useAcceptAdminInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ token, name, password }: { token: string; name: string; password: string }) =>
+      apiClient.adminInvitations.accept(token, { name, password }).then(res => res.data),
+    onSuccess: (data) => {
+      toast({
+        title: 'Invitation accepted',
+        description: 'You now have admin access to SNIPFIT!',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to accept invitation',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useCancelAdminInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.adminInvitations.cancel(id).then(res => res.data),
+    onSuccess: () => {
+      toast({
+        title: 'Invitation cancelled',
+        description: 'The admin invitation has been cancelled.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to cancel invitation',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useResendAdminInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.adminInvitations.resend(id).then(res => res.data),
+    onSuccess: () => {
+      toast({
+        title: 'Invitation resent',
+        description: 'A new invitation has been sent.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to resend invitation',
+        description: error.response?.data?.error || 'An error occurred',
+        variant: 'destructive',
+      });
+    },
+  });
+};

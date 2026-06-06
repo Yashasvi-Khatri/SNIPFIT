@@ -5,6 +5,7 @@ import { useAdminStats, useExpiringMembers, useMonthlyRevenue } from '@/hooks/us
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AdminInvitationManager from '@/components/admin/AdminInvitationManager';
 import {
   Users,
   UserPlus,
@@ -181,6 +182,11 @@ export default function AdminDashboard() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Admin Invitations Section */}
+        <div className="mb-8">
+          <AdminInvitationManager />
         </div>
 
         {/* Charts Row */}

@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 export interface BadgeProps {
   children: ReactNode;
-  variant?: 'sky' | 'green' | 'gray' | 'red';
+  variant?: 'sky' | 'green' | 'gray' | 'red' | 'outline';
   size?: 'sm' | 'md';
   className?: string;
 }
@@ -12,6 +12,7 @@ const variantStyles: Record<NonNullable<BadgeProps['variant']>, string> = {
   green: 'bg-green-500/20 text-green-400 border-green-500/30',
   gray: 'bg-white/10 text-gray-400 border-white/20',
   red: 'bg-red-500/20 text-red-400 border-red-500/30',
+  outline: 'bg-transparent border-current',
 };
 
 const sizeStyles: Record<NonNullable<BadgeProps['size']>, string> = {

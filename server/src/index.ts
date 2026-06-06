@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth';
 import adminAuthRoutes from './routes/adminAuth';
+import adminInvitationRoutes from './routes/adminInvitations';
 import dashboardRoutes from './routes/dashboard';
 import contactRoutes from './routes/contact';
 import classesRoutes from './routes/classes';
@@ -12,6 +13,10 @@ import membersRoutes from './routes/members';
 import workoutsRoutes from './routes/workouts';
 import measurementsRoutes from './routes/measurements';
 import adminRoutes from './routes/admin';
+import adminMembersRoutes from './routes/adminMembers';
+import adminClassesRoutes from './routes/adminClasses';
+import settingsRoutes from './routes/settings';
+import notificationsRoutes from './routes/notifications';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
 import { validate } from './middleware/validate';
@@ -53,6 +58,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin-auth', adminAuthRoutes);
+app.use('/api/admin-invitations', adminInvitationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/classes', classesRoutes);
@@ -60,6 +66,11 @@ app.use('/api/members', membersRoutes);
 app.use('/api/workouts', workoutsRoutes);
 app.use('/api/measurements', measurementsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/members', adminMembersRoutes);
+app.use('/api/admin/classes', adminClassesRoutes);
+app.use('/api/members/me', settingsRoutes);
+app.use('/api/auth/change-password', settingsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // User routes (protected)
 app.get('/api/users', authenticate, async (req: Request, res: Response, next: NextFunction) => {

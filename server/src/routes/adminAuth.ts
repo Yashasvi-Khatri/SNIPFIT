@@ -179,11 +179,11 @@ router.post('/set-security-code', async (req: Request, res: Response, next: Next
       return;
     }
 
-    // Validate security code format (at least 6 characters, alphanumeric)
-    if (newCode.length < 6 || !/^[a-zA-Z0-9]+$/.test(newCode)) {
+    // Validate security code format (exactly 6 alphanumeric characters)
+    if (newCode.length !== 6 || !/^[a-zA-Z0-9]+$/.test(newCode)) {
       res.status(400).json({ 
         success: false, 
-        error: 'Security code must be at least 6 alphanumeric characters', 
+        error: 'Security code must be exactly 6 alphanumeric characters', 
         statusCode: 400 
       });
       return;

@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
-import { authenticate } from '../middleware/auth';
+import { authenticate, adminOnly } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 
 const router = express.Router();
@@ -142,6 +142,73 @@ router.delete('/:id', authenticate, async (req: Request, res: Response, next: Ne
     await prisma.measurement.delete({ where: { id } });
 
     res.json({ success: true, message: 'Measurement deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Admin endpoints for viewing member measurements
+
+// GET /api/admin/members/:userId/measurements - Get all measurements for a specific member (admin only)
+router.get('/admin/members/:userId', adminOnly, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = String(req.params.userId);
+
+    const measurements = await prisma.measurement.findMany({
+      where: { userId },
+      orderBy: { date: 'desc' },
+    });
+
+    // Calculate summary statistics
+    const totalMeasurements = measurements.length;
+    const latestMeasurement = measurements.length > 0 ? measurements[0] : null;
+    
+    let weightChange: number | null = null;
+    let bodyFatChange: number | null = null;
+    
+    if (measurements.length >= 2) {
+      const latest = measurements[0];
+      const previous = measurements[measurements.length - 1];
+      
+      if (latest && previous) {
+        if (latest.weightKg != null && previous.weightKg != null) {
+          weightChange = latest.weightKg - previous.weightKg;
+        }
+        if (latest.bodyFatPct != null && previous.bodyFatPct != null) {
+          bodyFatChange = latest.bodyFatPct - previous.bodyFatPct;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      measurements,
+      summary: {
+        totalMeasurements,
+        latestMeasurement,
+        weightChange,
+        bodyFatChange,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/admin/members/:userId/measurements/latest - Get the single most recent measurement for a member (admin only)
+router.get('/admin/members/:userId/latest', adminOnly, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = String(req.params.userId);
+
+    const measurement = await prisma.measurement.findFirst({
+      where: { userId },
+      orderBy: { date: 'desc' },
+    });
+
+    res.json({
+      success: true,
+      measurement,
+    });
   } catch (error) {
     next(error);
   }

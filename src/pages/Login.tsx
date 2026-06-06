@@ -22,8 +22,9 @@ export default function Login() {
   // Check if user was redirected from admin login
   const state = location.state as { adminEmail?: string; adminVerified?: boolean } | null;
   
-  if (state?.adminVerified && state.adminEmail && !email) {
+  if (state?.adminVerified && state.adminEmail) {
     setEmail(state.adminEmail);
+    setIsAdminLogin(true); // Automatically enable admin mode
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,6 +45,7 @@ export default function Login() {
           if (verificationResult.success) {
             // Security code verified, proceed with login
             const user = await login(email, password);
+            // Redirect to admin dashboard
             navigate('/admin', { replace: true });
           }
         } catch (verifyError: any) {

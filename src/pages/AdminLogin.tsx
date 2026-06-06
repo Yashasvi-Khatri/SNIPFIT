@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { Shield, Lock, AlertCircle, Loader2, Key } from 'lucide-react';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -33,9 +33,8 @@ export default function AdminLogin() {
       const verificationResult = await verifySecurityCode.mutateAsync({ email, securityCode });
 
       if (verificationResult.success) {
-        // If security code is valid, proceed with normal login
-        // Note: In a real implementation, you might want to handle this differently
-        // For now, we'll redirect to the main login with a flag
+        // If security code is valid, redirect to regular login with admin mode enabled
+        // The user will need to enter their password there
         navigate('/login', { 
           state: { 
             adminEmail: email,
@@ -117,7 +116,7 @@ export default function AdminLogin() {
                 className="bg-slate-800/50 border-purple-500/20 text-white placeholder:text-slate-400 font-mono tracking-widest text-center text-lg"
               />
               <p className="text-xs text-purple-300 text-center">
-                This is a unique 6-character code only known to admins
+                This is a unique 6-digit code only known to admins
               </p>
             </div>
 

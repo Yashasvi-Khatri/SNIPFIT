@@ -321,3 +321,87 @@ export const sendPasswordResetEmail = async (to: string, data: {
     throw error;
   }
 };
+
+// 7. Admin invitation
+export const sendAdminInvitation = async (to: string, data: {
+  inviterName: string,
+  acceptLink: string,
+  expiryHours: number
+}): Promise<void> => {
+  if (!resend) {
+    console.log('Resend API key not configured, skipping email');
+    return;
+  }
+
+  try {
+    const content = `
+      <h2 style="margin-top: 0;">🎉 You're Invited to Become a SNIPFIT Admin!</h2>
+      <p>Hi there,</p>
+      <p><strong>${data.inviterName}</strong> has invited you to become an administrator at SNIPFIT Gym.</p>
+      
+      <div style="background: #2A2A2A; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FF6B2C;">
+        <p><strong>What this means:</strong></p>
+        <ul>
+          <li>🔧 Access to admin dashboard</li>
+          <li>👥 Manage member accounts</li>
+          <li>📊 View gym statistics and analytics</li>
+          <li>📅 Manage class schedules and bookings</li>
+          <li>💳 Monitor payments and memberships</li>
+        </ul>
+      </div>
+      
+      <p>This invitation expires in <strong>${data.expiryHours} hours</strong>.</p>
+      <a href="${data.acceptLink}" class="button">Accept Admin Invitation</a>
+      <p>If you have any questions about this invitation, contact ${data.inviterName} or our team.</p>
+      <p>We're excited to have you join the SNIPFIT team!</p>
+    `;
+
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to,
+      subject: '🎉 Admin Invitation - SNIPFIT Gym',
+      html: baseTemplate(content),
+    });
+  } catch (error) {
+    console.error('Failed to send admin invitation email:', error);
+    throw error;
+  }
+};
+
+// 8. Admin invitation accepted
+export const sendAdminInvitationAccepted = async (to: string, data: {
+  newAdminName: string,
+  newAdminEmail: string
+}): Promise<void> => {
+  if (!resend) {
+    console.log('Resend API key not configured, skipping email');
+    return;
+  }
+
+  try {
+    const content = `
+      <h2 style="margin-top: 0;">✅ Admin Invitation Accepted</h2>
+      <p><strong>${data.newAdminName}</strong> (${data.newAdminEmail}) has accepted your admin invitation.</p>
+      <p>They now have full admin access to the SNIPFIT system.</p>
+      <div style="background: #2A2A2A; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Next steps:</strong></p>
+        <ul>
+          <li>📋 Ensure they understand their responsibilities</li>
+          <li>🔐 Help them set up their 6-digit admin security code</li>
+          <li>📚 Provide training on admin dashboard usage</li>
+        </ul>
+      </div>
+      <p>If this wasn't authorized, please contact our support team immediately.</p>
+    `;
+
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to,
+      subject: '✅ Admin Invitation Accepted - SNIPFIT',
+      html: baseTemplate(content),
+    });
+  } catch (error) {
+    console.error('Failed to send admin invitation accepted email:', error);
+    throw error;
+  }
+};

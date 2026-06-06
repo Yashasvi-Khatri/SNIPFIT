@@ -7,6 +7,207 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                   String          @id @default(cuid())
+  email                String          @unique
+  name                 String
+  phone                String?
+  passwordHash         String?
+  role                 Role            @default(MEMBER)
+  avatarUrl            String?
+  dateOfBirth          DateTime?
+  gender               String?
+  address              String?
+  emergencyContact     String?
+  refreshToken         String?
+  deletedAt            DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  passwordResetExpiry  DateTime?
+  passwordResetToken   String?
+  accountLockedUntil   DateTime?
+  adminSecurityCode    String?
+  failedLoginAttempts  Int             @default(0)
+  lastFailedLoginAt    DateTime?
+  adminInvitationsSent AdminInvite[]   @relation("AdminInvites")
+  adminLoginLogs       AdminLoginLog[]
+  attendance           Attendance[]
+  bookings             Booking[]
+  contactForms         ContactForm[]
+  trainedClasses       GymClass[]      @relation("TrainerClasses")
+  measurements         Measurement[]
+  memberships          Membership[]
+  notifications        Notification[]
+  payments             Payment[]
+  progressPhotos       ProgressPhoto[]
+  workouts             Workout[]
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  userId    String
+  plan      MembershipPlan
+  status    MembershipStatus @default(ACTIVE)
+  startDate DateTime
+  endDate   DateTime
+  price     Float
+  paymentId String?
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  userId            String
+  razorpayOrderId   String?        @unique
+  razorpayPaymentId String?
+  amount            Float
+  plan              MembershipPlan
+  status            PaymentStatus  @default(PENDING)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  user              User           @relation(fields: [userId], references: [id])
+}
+
+model GymClass {
+  id          String    @id @default(cuid())
+  name        String
+  type        ClassType
+  trainerId   String
+  startTime   DateTime
+  endTime     DateTime
+  capacity    Int       @default(20)
+  location    String    @default("Main Floor")
+  description String?
+  isRecurring Boolean   @default(false)
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+  trainer     User      @relation("TrainerClasses", fields: [trainerId], references: [id])
+}
+
+model Booking {
+  id        String        @id @default(cuid())
+  userId    String
+  classId   String
+  status    BookingStatus @default(CONFIRMED)
+  bookedAt  DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  class     GymClass      @relation(fields: [classId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@unique([userId, classId])
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  userId      String
+  checkedInAt DateTime @default(now())
+  classId     String?
+  notes       String?
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Workout {
+  id        String            @id @default(cuid())
+  userId    String
+  date      DateTime
+  notes     String?
+  duration  Int?
+  createdAt DateTime          @default(now())
+  user      User              @relation(fields: [userId], references: [id])
+  exercises WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id        String  @id @default(cuid())
+  workoutId String
+  name      String
+  sets      Int
+  reps      Int
+  weightKg  Float?
+  notes     String?
+  order     Int     @default(0)
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+}
+
+model Measurement {
+  id         String   @id @default(cuid())
+  userId     String
+  date       DateTime
+  weightKg   Float?
+  bodyFatPct Float?
+  chestCm    Float?
+  waistCm    Float?
+  hipsCm     Float?
+  bicepCm    Float?
+  notes      String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model ProgressPhoto {
+  id           String   @id @default(cuid())
+  userId       String
+  imageUrl     String
+  cloudinaryId String?
+  takenAt      DateTime
+  notes        String?
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ContactForm {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  email     String
+  phone     String?
+  interest  String
+  message   String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model AdminLoginLog {
+  id            String   @id @default(cuid())
+  userId        String
+  ipAddress     String?
+  userAgent     String?
+  success       Boolean
+  failureReason String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+model AdminInvite {
+  id              String    @id @default(cuid())
+  email           String
+  token           String    @unique
+  invitedByUserId String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  invitedBy       User      @relation("AdminInvites", fields: [invitedByUserId], references: [id])
+}
+
 enum Role {
   MEMBER
   TRAINER
@@ -52,195 +253,3 @@ enum ClassType {
   PERSONAL_TRAINING
   NUTRITION
 }
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  phone         String?
-  passwordHash  String?
-  role          Role      @default(MEMBER)
-  avatarUrl     String?
-  dateOfBirth   DateTime?
-  gender        String?
-  address       String?
-  emergencyContact String?
-  refreshToken  String?
-  deletedAt     DateTime?
-  passwordResetToken String?
-  passwordResetExpiry DateTime?
-  adminSecurityCode String?  // Additional security code for admin login
-  failedLoginAttempts Int @default(0)  // Track failed login attempts
-  lastFailedLoginAt DateTime?
-  accountLockedUntil DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  memberships   Membership[]
-  payments      Payment[]
-  workouts      Workout[]
-  measurements  Measurement[]
-  bookings      Booking[]
-  attendance    Attendance[]
-  notifications Notification[]
-  trainedClasses GymClass[] @relation("TrainerClasses")
-  progressPhotos ProgressPhoto[]
-  contactForms  ContactForm[]
-  adminLoginLogs AdminLoginLog[]
-}
-
-model Membership {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id])
-  plan      MembershipPlan
-  status    MembershipStatus @default(ACTIVE)
-  startDate DateTime
-  endDate   DateTime
-  price     Float
-  paymentId String?
-  notes     String?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
-  razorpayOrderId String?       @unique
-  razorpayPaymentId String?
-  amount          Float
-  plan            MembershipPlan
-  status          PaymentStatus @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-}
-
-model GymClass {
-  id          String    @id @default(cuid())
-  name        String
-  type        ClassType
-  trainerId   String
-  trainer     User      @relation("TrainerClasses", fields: [trainerId], references: [id])
-  startTime   DateTime
-  endTime     DateTime
-  capacity    Int       @default(20)
-  location    String    @default("Main Floor")
-  description String?
-  isRecurring Boolean   @default(false)
-  cancelledAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  bookings    Booking[]
-}
-
-model Booking {
-  id        String        @id @default(cuid())
-  userId    String
-  user      User          @relation(fields: [userId], references: [id])
-  classId   String
-  class     GymClass      @relation(fields: [classId], references: [id])
-  status    BookingStatus @default(CONFIRMED)
-  bookedAt  DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  @@unique([userId, classId])
-}
-
-model Attendance {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  checkedInAt DateTime @default(now())
-  classId     String?
-  notes       String?
-}
-
-model Workout {
-  id        String          @id @default(cuid())
-  userId    String
-  user      User            @relation(fields: [userId], references: [id])
-  date      DateTime
-  notes     String?
-  duration  Int?
-  exercises WorkoutExercise[]
-  createdAt DateTime        @default(now())
-}
-
-model WorkoutExercise {
-  id         String  @id @default(cuid())
-  workoutId  String
-  workout    Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  name       String
-  sets       Int
-  reps       Int
-  weightKg   Float?
-  notes      String?
-  order      Int     @default(0)
-}
-
-model Measurement {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  date        DateTime
-  weightKg    Float?
-  bodyFatPct  Float?
-  chestCm     Float?
-  waistCm     Float?
-  hipsCm      Float?
-  bicepCm     Float?
-  notes       String?
-  createdAt   DateTime @default(now())
-}
-
-model ProgressPhoto {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  imageUrl    String
-  cloudinaryId String?
-  takenAt     DateTime
-  notes       String?
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  title     String
-  message   String
-  type      String   @default("info")
-  read      Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
-}
-
-model ContactForm {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  name      String
-  email     String
-  phone     String?
-  interest  String
-  message   String
-  resolved  Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-model AdminLoginLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  ipAddress String?
-  userAgent String?
-  success   Boolean
-  failureReason String?
-  createdAt DateTime @default(now())
-}
-

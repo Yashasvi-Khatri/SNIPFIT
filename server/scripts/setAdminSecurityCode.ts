@@ -11,18 +11,25 @@ async function setAdminSecurityCode() {
     process.exit(1);
   }
 
-  const [email, securityCode] = args;
+  const email = args[0];
+  const securityCode = args[1];
 
-  // Validate security code format
-  if (securityCode.length < 6 || !/^[a-zA-Z0-9]+$/.test(securityCode)) {
-    console.log('Error: Security code must be at least 6 alphanumeric characters');
+  // Validate that both arguments are provided
+  if (!email || !securityCode) {
+    console.log('Error: Both email and security code are required');
+    process.exit(1);
+  }
+
+  // Validate security code format (exactly 6 alphanumeric characters)
+  if (securityCode.length !== 6 || !/^[a-zA-Z0-9]+$/.test(securityCode)) {
+    console.log('Error: Security code must be exactly 6 alphanumeric characters');
     process.exit(1);
   }
 
   try {
-    // Find user by email
+    // Find user by email (with type assertion for Prisma)
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email as string },
     });
 
     if (!user) {
@@ -35,10 +42,10 @@ async function setAdminSecurityCode() {
       process.exit(1);
     }
 
-    // Update security code
+    // Update security code (with type assertion for Prisma)
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: { adminSecurityCode: securityCode },
+      data: { adminSecurityCode: securityCode as string },
     });
 
     console.log(`✅ Security code set successfully for ${email}`);
